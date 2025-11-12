@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
 import "../styles/AdminDashboard.css";
 
@@ -8,31 +9,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState(null);
   const [bakeryId, setBakeryId] = useState("");
   const [userBakeries, setUserBakeries] = useState([]);
-
-  // Fetch bakeries for current user (for dropdown)
-  useEffect(() => {
-    fetchUserBakeries();
-  }, []);
-
-  const fetchUserBakeries = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("Not logged in. Please log in first.");
-        return;
-      }
-      
-      // Assuming there's a bakery API to get user's bakeries
-      // For now, we'll use a simple approach - get bakeryId from localStorage if saved
-      const savedBakeryId = localStorage.getItem("bakeryId");
-      if (savedBakeryId) {
-        setBakeryId(savedBakeryId);
-        fetchOrders(savedBakeryId);
-      }
-    } catch (err) {
-      console.error("Error fetching bakeries:", err);
-    }
-  };
+  const nav = useNavigate();
 
   const fetchOrders = async (bId) => {
     if (!bId) {
@@ -46,12 +23,34 @@ export default function AdminDashboard() {
       const response = await API.get(`/orders/admin/bakery/${bId}`);
       setOrders(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch orders");
+      if (err.response?.status === 403) {
+        setError("Access denied. Admin privileges required.");
+      } else if (err.response?.status === 401) {
+        setError("Please log in to access admin dashboard.");
+        setTimeout(() => nav("/login"), 2000);
+      } else {
+        setError(err.response?.data?.message || "Failed to fetch orders");
+      }
       console.error("Error fetching orders:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  // Check admin access on mount
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user.role !== 'admin') {
+      setError("Access denied. Admin privileges required.");
+    }
+    
+    // Get bakeryId from localStorage if saved
+    const savedBakeryId = localStorage.getItem("bakeryId");
+    if (savedBakeryId) {
+      setBakeryId(savedBakeryId);
+      fetchOrders(savedBakeryId);
+    }
+  }, []);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
@@ -65,7 +64,14 @@ export default function AdminDashboard() {
       ));
       alert(`Order ${newStatus.toLowerCase()} successfully!`);
     } catch (err) {
-      alert("Failed to update order status: " + (err.response?.data?.message || err.message));
+      if (err.response?.status === 403) {
+        alert("Access denied. Admin privileges required.");
+      } else if (err.response?.status === 401) {
+        alert("Please log in to access admin dashboard.");
+        nav("/login");
+      } else {
+        alert("Failed to update order status: " + (err.response?.data?.message || err.message));
+      }
       console.error("Error updating status:", err);
     }
   };

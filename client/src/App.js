@@ -13,6 +13,7 @@ import PaymentSuccess from "./pages/PaymentSuccess"; // <-- Used for the new sta
 import OrderTracker from "./pages/OrderTracker";
 import OrderStatus from "./pages/OrderStatus";
 import AdminDashboard from "./pages/AdminDashboard"; // 🆕 Admin Dashboard
+import UserDashboard from "./pages/UserDashboard"; // 🆕 User Dashboard
 import Inbox from "./pages/Inbox";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
@@ -51,6 +52,7 @@ export default function App(){
                 <Route path="/order-status/:id" element={<PaymentSuccess />} /> 
                 
                 <Route path="/admin-dashboard" element={<AdminDashboard />} /> {/* 🆕 Admin Dashboard Route */}
+                <Route path="/dashboard" element={<UserDashboard />} /> {/* 🆕 User Dashboard Route */}
                 
                 <Route path="/inbox" element={<Inbox />} />
                 <Route path="/profile" element={<Profile />} />

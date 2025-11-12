@@ -52,8 +52,9 @@ export default function Navbar(){
               }}>{cart.length}</span>
             )}
           </Link>
+          {token && <Link to="/dashboard">Dashboard</Link>}
           <Link to="/profile">Profile</Link>
-          {token && <Link to="/admin-dashboard" style={{color:'#8b1533',background:'#fff0f2',padding:'6px 10px',borderRadius:8}}>📊 Admin</Link>}
+          {token && user?.role === 'admin' && <Link to="/admin-dashboard" style={{color:'#8b1533',background:'#fff0f2',padding:'6px 10px',borderRadius:8}}>📊 Admin</Link>}
           {!token ? (
             <>
               <Link to="/login">Login</Link>

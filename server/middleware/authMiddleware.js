@@ -12,10 +12,22 @@ export const auth = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret123");
     req.user = { 
       id: decoded.id || decoded._id || decoded.userId,
-      _id: decoded.id || decoded._id || decoded.userId 
+      _id: decoded.id || decoded._id || decoded.userId,
+      role: decoded.role || 'user'
     };
     next();
   } catch (err) {
     return res.status(401).json({ message: "Token invalid" });
   }
+};
+
+// Admin middleware - requires admin role
+export const admin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
 };

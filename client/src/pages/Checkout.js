@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
+import StripePayment from "../components/StripePayment";
 
 export default function Checkout(){
   const [address, setAddress] = useState("");
@@ -170,21 +171,55 @@ export default function Checkout(){
             )}
             {/* Step 4: If online, show form for card/upi */}
             {paymentStep === "form" && (
-              <form onSubmit={handleFakePayment}>
-                <h2 style={{color:'#8b1533',marginBottom:16}}>{onlineType === 'card' ? 'Card Payment' : 'UPI Payment'}</h2>
+              <>
+                <h2 style={{color:'#8b1533',marginBottom:16}}>{onlineType === 'card' ? 'Card Payment (Stripe)' : 'UPI Payment'}</h2>
                 {onlineType === 'card' ? (
-                  <>
-                    <input required placeholder="Card Number" maxLength={16} style={{width:'100%',padding:10,marginBottom:12,borderRadius:8,border:'1px solid #eee'}} />
-                    <div style={{display:'flex',gap:8,marginBottom:12}}>
-                      <input required placeholder="MM/YY" maxLength={5} style={{flex:1,padding:10,borderRadius:8,border:'1px solid #eee'}} />
-                      <input required placeholder="CVV" maxLength={3} style={{flex:1,padding:10,borderRadius:8,border:'1px solid #eee'}} />
-                    </div>
-                  </>
+                  <StripePayment
+                    amount={total}
+                    onSuccess={async (paymentIntent) => {
+                      setPaymentStep("loading");
+                      setTimeout(async () => {
+                        setPaymentStep("success");
+                        setTimeout(async () => {
+                          const virtualCart = JSON.parse(localStorage.getItem('virtualCart') || '[]');
+                          const hasReal = items.some(it => !it._id.startsWith('p'));
+                          const hasVirtual = items.some(it => it._id.startsWith('p'));
+                          if (hasVirtual && !hasReal) {
+                            localStorage.removeItem('virtualCart');
+                            nav(`/success?orderId=virtual_${Date.now()}`);
+                            return;
+                          }
+                          try {
+                            const res = await API.post("/orders", {
+                              address,
+                              paymentMethod: 'online',
+                              paymentStatus: 'Paid',
+                              onlineType: 'card',
+                              paymentMode: 'Card',
+                              paymentWay: 'Stripe',
+                              finalAmount: total
+                            });
+                            localStorage.removeItem('virtualCart');
+                            nav(`/success?orderId=${res.data.order._id}`);
+                          } catch (err) {
+                            setPaymentStep("fail");
+                          }
+                        }, 1200);
+                      }, 500);
+                    }}
+                    onCancel={() => {
+                      setPaymentStep("method");
+                      setPaymentMethod("");
+                      setOnlineType("");
+                    }}
+                  />
                 ) : (
-                  <input required placeholder="Enter UPI ID" style={{width:'100%',padding:10,marginBottom:12,borderRadius:8,border:'1px solid #eee'}} />
+                  <form onSubmit={handleFakePayment}>
+                    <input required placeholder="Enter UPI ID" style={{width:'100%',padding:10,marginBottom:12,borderRadius:8,border:'1px solid #eee'}} />
+                    <button className="btn" type="submit" style={{width:'100%',marginTop:8}}>Pay ₹{total}</button>
+                  </form>
                 )}
-                <button className="btn" type="submit" style={{width:'100%',marginTop:8}}>Pay ₹{total}</button>
-              </form>
+              </>
             )}
             {/* Step 5: Loading */}
             {paymentStep === "loading" && (

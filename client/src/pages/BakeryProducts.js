@@ -34,8 +34,10 @@ export default function BakeryProducts() {
     ]);
 
     const [products, setProducts] = useState([]);
+    const [filteredProducts, setFilteredProducts] = useState([]);
     const [bakery, setBakery] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
 
     // ... (Your existing useEffect for loading bakery and products remains unchanged)
     useEffect(() => {
@@ -51,12 +53,15 @@ export default function BakeryProducts() {
                 if (isMounted) {
                     if (res.data && res.data.length > 0) {
                         setProducts(res.data.slice(0, 9));
+                        setFilteredProducts(res.data.slice(0, 9));
                     } else {
                         setProducts(fallbackProducts.current.slice(0, 9));
+                        setFilteredProducts(fallbackProducts.current.slice(0, 9));
                     }
                 }
             } catch (err) {
                 setProducts(fallbackProducts.current.slice(0, 9));
+                setFilteredProducts(fallbackProducts.current.slice(0, 9));
             } finally {
                 if (isMounted) setLoading(false);
             }
@@ -66,8 +71,22 @@ export default function BakeryProducts() {
         return () => {
             isMounted = false;
             setProducts([]);
+            setFilteredProducts([]);
         };
     }, [id]);
+
+    // Search filter effect
+    useEffect(() => {
+        if (searchTerm.trim() === "") {
+            setFilteredProducts(products);
+        } else {
+            const filtered = products.filter(product =>
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.description?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setFilteredProducts(filtered);
+        }
+    }, [searchTerm, products]);
 
     // -----------------------------------------------------------
     // 🔍 YOUR ORIGINAL handleOrder FUNCTION, BUT RENAMED AND MODIFIED 
@@ -155,11 +174,39 @@ export default function BakeryProducts() {
             
             {/* ... (Existing bakery header and product list rendering) ... */}
             
+            {/* Search Bar */}
+            {!loading && (
+                <div style={{maxWidth: '600px', margin: '0 auto 32px auto'}}>
+                    <input
+                        type="text"
+                        placeholder="🔍 Search cakes/products by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{
+                            width: '100%',
+                            padding: '14px 20px',
+                            fontSize: '16px',
+                            border: '2px solid #f1e6e9',
+                            borderRadius: '12px',
+                            outline: 'none',
+                            transition: 'border-color 0.3s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#8b1533'}
+                        onBlur={(e) => e.target.style.borderColor = '#f1e6e9'}
+                    />
+                </div>
+            )}
+
             {loading ? (
                 <div style={{ textAlign: "center", padding: 40 }}>Loading products...</div>
+            ) : filteredProducts.length === 0 ? (
+                <div style={{textAlign: 'center', padding: '40px'}}>
+                    <div style={{fontSize: '18px', color: '#6b6b6b', marginBottom: '16px'}}>No products found matching "{searchTerm}"</div>
+                    <button className="btn" onClick={() => setSearchTerm("")}>Clear Search</button>
+                </div>
             ) : (
                 <div className="product-grid" style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center" }}>
-                    {products.map(product => (
+                    {filteredProducts.map(product => (
                         <div key={product._id} className="card" style={{ minWidth: 260, maxWidth: 320, boxShadow: "0 4px 18px rgba(139,21,51,0.07)", border: "1.5px solid #f1e6e9", borderRadius: 10 }}>
                             <img src={product.image} alt={product.name} style={{ height: 220, width: "100%", objectFit: "cover", borderTopLeftRadius: 10, borderTopRightRadius: 10 }} />
                             <div className="card-body" style={{ padding: 16 }}>

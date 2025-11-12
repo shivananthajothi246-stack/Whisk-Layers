@@ -12,6 +12,7 @@ import productRoutes from "./routes/productRoutes.js";
 import bakeryRoutes from "./routes/bakeryRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import stripeRoutes from "./routes/stripeRoutes.js";
 
 
 dotenv.config();
@@ -30,6 +31,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/bakeries", bakeryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/stripe", stripeRoutes);
 
 // optional seed endpoint to create demo bakeries/products (call once if you want).
 

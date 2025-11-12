@@ -24,4 +24,6 @@ const OrderSchema = new mongoose.Schema({
   paymentMode: { type: String, default: 'cash' }, // e.g., Card, UPI, Cash On Delivery
   paymentWay: { type: String, default: 'Exact Change' }, // e.g., Visa, GPay, Exact Change
   finalAmount: { type: Number, default: 0 } // The actual amount paid (matches client side name)
-}, { timestamps: true });export default mongoose.model("Order", OrderSchema);
+}, { timestamps: true });
+
+export default mongoose.model("Order", OrderSchema);

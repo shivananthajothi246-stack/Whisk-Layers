@@ -1,7 +1,7 @@
 import express from "express";
 import Order from "../models/Order.js";
 import Cart from "../models/Cart.js";
-import { auth as protect } from "../middleware/authMiddleware.js";
+import { auth as protect, admin } from "../middleware/authMiddleware.js";
 import { getAdminOrders, updateOrderAdminStatus } from "../controllers/orderController.js";
 
 const router = express.Router();
@@ -54,30 +54,38 @@ router.post("/", protect, async (req, res) => {
     const validCartItems = cartItems.filter(item => item.product && item.product._id);
     if (validCartItems.length === 0) return res.status(400).json({ message: "No valid products in cart" });
 
-    // Always recalculate price from product data for accuracy
-    const orderItems = validCartItems.map(c => ({
-      product: c.product._id,
-      quantity: c.quantity,
-      customization: c.customization,
-      price: c.product.price * c.quantity
-    }));
-    const totalAmount = orderItems.reduce((acc, item) => acc + item.price, 0);
+    // Always recalculate price from product data for accuracy
+    const orderItems = validCartItems.map(c => ({
+      product: c.product._id,
+      quantity: c.quantity,
+      customization: c.customization,
+      price: c.product.price * c.quantity
+    }));
+    const totalAmount = orderItems.reduce((acc, item) => acc + item.price, 0);
 
-    const order = await Order.create({
-      user: req.user._id,
-      orderItems,
-      totalAmount,
-      address,
-      status: "Placed",
-      paymentMethod: paymentMethod || 'cash',
-      paymentStatus: paymentStatus || (paymentMethod === 'online' ? 'Paid' : 'Pending'),
-      onlineType: onlineType || null,
+    // 🆕 CAPTURE BAKERY FROM FIRST PRODUCT (assuming single bakery per cart)
+    let bakeryId = null;
+    if (validCartItems.length > 0 && validCartItems[0].product.bakery) {
+      bakeryId = validCartItems[0].product.bakery;
+    }
+
+    const order = await Order.create({
+      user: req.user._id,
+      bakery: bakeryId, // 🆕 Store bakery reference for admin dashboard
+      orderItems,
+      totalAmount,
+      address,
+      status: "Placed",
+      adminStatus: "Pending", // 🆕 Initial admin status
+      paymentMethod: paymentMethod || 'cash',
+      paymentStatus: paymentStatus || (paymentMethod === 'online' ? 'Paid' : 'Pending'),
+      onlineType: onlineType || null,
         
       // 💾 NEW FIELDS SAVED HERE
       paymentMode,
       paymentWay,
       finalAmount // This maps to the amount paid on the client side
-    });
+    });
 
     await Cart.deleteMany({ user: req.user._id });
 
@@ -115,11 +123,11 @@ router.get("/:id", protect, async (req, res) => {
   }
 });
 
-// 🆕 ADMIN ROUTES
+// 🆕 ADMIN ROUTES - Protected with admin middleware
 // Get all orders for a bakery
-router.get("/admin/bakery/:bakeryId", protect, getAdminOrders);
+router.get("/admin/bakery/:bakeryId", protect, admin, getAdminOrders);
 
 // Update admin status (Accept/Reject)
-router.patch("/admin/status/:orderId", protect, updateOrderAdminStatus);
+router.patch("/admin/status/:orderId", protect, admin, updateOrderAdminStatus);
 
 export default router;
