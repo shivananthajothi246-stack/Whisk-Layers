@@ -1,0 +1,8 @@
+.container { max-width:1200px; margin:28px auto; padding:0 16px; }
+.btn { background:#8b1533; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+.btn-ghost { background:transparent; border:1px solid #eee; padding:8px 10px; border-radius:8px; cursor:pointer; }
+.card { background:#fff; border-radius:12px; padding:12px; box-shadow:0 12px 28px rgba(0,0,0,0.06); }
+.form-input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #eee; margin:8px 0; }
+
+/* bottom nav spacer on mobile */
+@media (max-width:600px) { body { padding-bottom:86px; } }
