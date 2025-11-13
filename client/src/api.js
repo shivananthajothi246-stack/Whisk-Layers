@@ -1,8 +1,17 @@
-import axios from "axios";
-const API = axios.create({ baseURL: process.env.REACT_APP_API || "http://localhost:5000/api" });
-API.interceptors.request.use(config => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+import axios from 'axios';
+
+/*
+  Centralized axios instance.
+  - Uses REACT_APP_API_BASE_URL if provided (good for production).
+  - Falls back to '/api' to let CRA's proxy (in development) forward requests to the server.
+*/
+const baseURL = process.env.REACT_APP_API_BASE_URL || '/api';
+
+const api = axios.create({
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
-export default API;
+
+export default api;
